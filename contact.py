@@ -45,7 +45,7 @@ class Location:
     def getTime(self):
         return(self.myTime)
 
-class Student(Location):
+class Student():
     def __init__(self,name):
             self.name=name
             self.locationList=[]
@@ -72,7 +72,7 @@ class Student(Location):
         return(result)
 
 
-class StudentBody(Student):
+class StudentBody():
     def __init__(self):
         self.StudentList=[]
     
