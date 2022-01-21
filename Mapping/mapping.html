@@ -1,0 +1,117 @@
+<!--
+    Map Utility
+    by Mike Farabee
+
+    https://leafletjs.com/
+    https://joshuafrazier.info/leaflet-basics/
+    https://leaflet-extras.github.io/leaflet-providers/preview/index.html
+
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapping</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="anonymous" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin="anonymous"></script>
+
+	<style type="text/css">
+	    html, body {
+		    margin: 0px;
+        }
+	</style>
+</head>
+
+<body>
+
+  Plot Style: &nbsp;
+  <select title="Map Style" name="plotType" id="plotType" onchange="onSelect()" enabled>
+    <option value="street">Street</option>
+    <option value="satellite">Satellite</option>
+  </select>
+  LATITUDE:<input type="number" id="latitude" name="latitude" title="latitude">
+  LOGITUDE:<input type="number" id="longitude" name="longitude" title="longitude">
+  <button id="findGPS" onclick="gotoGPS()" title="submit">Submit</button>
+  <br><br>
+
+  <div id="locationMap"></div>
+</body>
+
+
+<script>
+    var width  = window.innerWidth;
+	var height = window.innerHeight;
+    document.getElementById('locationMap').innerHTML = "<div id='map' style='width: "+(width-20)+"px; height: "+(height-20)+"px;'></div>";
+    var map;
+
+    // create tiles for maps that can be switched to
+    var streetTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              });
+    var satelliteTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+  });
+
+    //map = L.map('map',{ center: [43.64701, -79.39425], zoom: 15 });
+    //map = L.map('map',{scrollWheelZoom:false}).setView([45.6287,-122.5747], 16);
+    map = L.map('map').setView([45.6287,-122.5747], 16);
+    streetTile.addTo(map); 
+
+    // event handler for dropdown box
+    // select proper tile provider
+    function onSelect(){
+       let result = document.getElementById("plotType").value;
+        if(result== "street" && map.hasLayer(satelliteTile)){
+            map.addLayer(streetTile);
+            map.removeLayer(satelliteTile);
+        }
+        if(result== "satellite" && map.hasLayer(streetTile)){
+            map.addLayer(satelliteTile);
+            map.removeLayer(streetTile);
+        }
+    }
+
+    function gotoGPS(){
+        let lat=document.getElementById("latitude").value;
+        let lng=document.getElementById("longitude").value;
+        map.setView([lat,lng],16);
+    }
+
+
+    /////////////////////////////////////////////////
+    // The following functions are not currently used
+    // They are a sample on how to draw different colored
+    // paths.
+    /////////////////////////////////////////////////
+
+    // The first 6 colors will always be the same, after that, a random color will be chosen
+    function getColor(index){
+      let result;
+      let colorList=["red", "blue", "green", "orange", "purple", "cyan"];
+
+      if(index<colorList.length){
+        result=colorList[index];
+      }else{
+        var red = Math.floor(Math.random() * 255);
+        var green = Math.floor(Math.random() * 255);
+        var blue = Math.floor(Math.random() * 255);
+        result="rgb(" + red + "," + green + "," + blue + " )"
+      }
+      return(result);
+    }
+
+    // draw paths to map 
+    // coordinate data is in the format: mydata[[lat,long],[lat,long]...]
+    // Each unique colorindex 0,1,2...  will be a different color
+    function addPointsToMap(mydata,colorIndex){
+        // add line from array points to map with some basic styling
+        L.polyline(mydata,{color:getColor(colorIndex),opacity:1}).addTo(map);
+    }
+
+
+</script>
+
+</html>
