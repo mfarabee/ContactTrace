@@ -1,5 +1,6 @@
 <!--
     Map Utility
+    Includes: Scale, multiple layers, Lat-Long popup
     by Mike Farabee
 
     https://leafletjs.com/
@@ -46,6 +47,7 @@
 	var height = window.innerHeight;
     document.getElementById('locationMap').innerHTML = "<div id='map' style='width: "+(width-20)+"px; height: "+(height-20)+"px;'></div>";
     var map;
+    var popup = L.popup();  // Used for Lat-Long display
 
     // create tiles for maps that can be switched to
     var streetTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -76,12 +78,22 @@
         }
     }
 
+    // Go to GPS coordinate specified
     function gotoGPS(){
         let lat=document.getElementById("latitude").value;
         let lng=document.getElementById("longitude").value;
         //map.setView([lat,lng],16); // This jumps to new coordinate
         map.flyTo([lat,lng],16);   // This does a cool fly transition to new coordinate
     }
+
+    // Display Lat-Lon when map is clicked
+    function onMapClick(e) {
+        popup
+        .setLatLng(e.latlng)
+        .setContent(e.latlng.toString())
+        .openOn(map);
+    }
+    map.on('click', onMapClick);
 
 
     /////////////////////////////////////////////////
