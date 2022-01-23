@@ -6,7 +6,8 @@
     https://leafletjs.com/
     https://joshuafrazier.info/leaflet-basics/
     https://leaflet-extras.github.io/leaflet-providers/preview/index.html
-
+      
+    
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -36,14 +37,18 @@
   Latitude:<input type="number" id="latitude" name="latitude" title="latitude">
   Longitude:<input type="number" id="longitude" name="longitude" title="longitude">
   <button id="findGPS" onclick="gotoGPS()" title="submit">Submit</button>
-  <br><br>
+  <br>
+  <input type="file" name="inputfile" id="inputfile" title="filename">
+  <br>
 
   <div id="locationMap"></div>
+
+    <pre id="output"></pre>
 </body>
 
+<script type="text/javascript">
 
-<script>
-    var width  = window.innerWidth;
+  var width  = window.innerWidth;
 	var height = window.innerHeight;
     document.getElementById('locationMap').innerHTML = "<div id='map' style='width: "+(width-20)+"px; height: "+(height-20)+"px;'></div>";
     var map;
@@ -97,9 +102,8 @@
 
 
     /////////////////////////////////////////////////
-    // The following functions are not currently used
-    // They are a sample on how to draw different colored
-    // paths.
+    // Sample on how to draw different colored
+    // paths from a file.
     /////////////////////////////////////////////////
 
     // The first 6 colors will always be the same, after that, a random color will be chosen
@@ -126,6 +130,64 @@
         L.polyline(mydata,{color:getColor(colorIndex),opacity:1}).addTo(map);
     }
 
+    // The following reads a file with paths. THe format is
+    // Path Name
+    // + <Latitude> <Longitude>
+    // + <Latitude> <Longitude>
+    // + <Latitude> <Longitude>
+    // Path 2 Name
+    // + <Latitude> <Longitude>
+    // + <Latitude> <Longitude>
+    // + <Latitude> <Longitude>
+    document.getElementById('inputfile')
+      .addEventListener('change', function() {
+        
+      var fr=new FileReader();
+      fr.onload=function(){
+        var line='';
+        var lines = this.result.split(/\r\n|\n/);
+        var outputArray=[];
+        var coordArray=[];
+        var minLat=99999,maxLat=-99999,minLong=99999,maxLong=-99999;
+        for(var index = 0; index < lines.length; index++){
+          line=lines[index].replace(/\n/,""); // strip whitespace and linefeed
+          if(line.charAt(0)=='+'){
+            var result= line.split(" ");
+            coordArray.push([result[1],result[2]]);
+            result[1]=parseFloat(result[1]);
+            result[2]=parseFloat(result[2]);
+            if(result[1]<minLat){
+              minLat=result[1];
+            }
+            if(result[1]>maxLat){
+              maxLat=result[1];
+            }
+            if(result[2]<minLong){
+              minLong=result[2];
+            }
+            if(result[2]>maxLong){
+              maxLong=result[2];
+            }
+          }else{ // found new path
+            if(coordArray.length>0){
+              outputArray.push(coordArray);
+            }
+            coordArray=[];
+          }
+          //console.log(index + " --> "+ lines[index]);
+        }
+        if(coordArray.length>0){
+          outputArray.push(coordArray);
+        }
+        for(index =0;index<outputArray.length;++index){
+          addPointsToMap(outputArray[index],index);
+        }
+        map.setView([(maxLat+minLat)/2.0,(maxLong+minLong)/2.0],16);
+      }
+      if(this.files[0] instanceof Blob){
+        fr.readAsText(this.files[0]);
+      }
+  });
 
 </script>
 
