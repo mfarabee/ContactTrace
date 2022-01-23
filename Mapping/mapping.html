@@ -1,8 +1,33 @@
 <!--
     Map Utility
-    Includes: Scale, multiple layers, Lat-Long popup
     by Mike Farabee
 
+    Description:
+    This is a bare bones HTML/JavaScript to demonstrate some of the capabilities of Leaflet mapping.
+    This is written, not as an application, but a strater script to contain useful things to aide in
+    quickly assembling other applications. It may not do a lot of error checking.
+
+    This script consists of a small HTML section that:
+      * Loads the necessary Leaflet modules
+      * create a map <div> to be used by Leaflet modules
+      * Creates some options to exercise functionality
+        - change map style
+        - Go to GPS coordinate
+        - Load paths from loacal file to be plotted
+
+    The JavaScript provides the following functions:
+        * Initializes differnt tiles
+        * Creates a popup with Lat and Long values when map is clicked
+        * Displays a scale on the map
+        * Demonstrate how to move to GPS coordinates 
+        * Draws paths read from file
+          - A Feature Group is a object that allows grouping of map objects like markers and drawing objects
+          - Stores all paths in Feature Group so they can be easily deleted and zoomed around
+          - demonstrates how to cycle through Feature Group and delete feature group
+          - demonstrates how to find bounds of Feature Group
+
+
+    Supporting documents:    
     https://leafletjs.com/
     https://joshuafrazier.info/leaflet-basics/
     https://leaflet-extras.github.io/leaflet-providers/preview/index.html
@@ -29,89 +54,95 @@
 
 <body>
 
-  Plot Style: &nbsp;
+  Map Style: &nbsp;
   <select title="Map Style" name="plotType" id="plotType" onchange="onSelect()" enabled>
     <option value="street">Street</option>
     <option value="satellite">Satellite</option>
   </select>
   Latitude:<input type="number" id="latitude" name="latitude" title="latitude">
   Longitude:<input type="number" id="longitude" name="longitude" title="longitude">
-  <button id="findGPS" onclick="gotoGPS()" title="submit">Submit</button>
+  <button id="findGPS" onclick="gotoGPS(16)" title="submit">Submit</button>
   <br>
+  Load Paths: &nbsp; 
   <input type="file" name="inputfile" id="inputfile" title="filename">
   <br>
 
   <div id="locationMap"></div>
-
-    <pre id="output"></pre>
 </body>
+
+
+
 
 <script type="text/javascript">
 
-  var width  = window.innerWidth;
-	var height = window.innerHeight;
+    var width  = window.innerWidth;
+	  var height = window.innerHeight;
+
+    // initialize the map based on screen size
     document.getElementById('locationMap').innerHTML = "<div id='map' style='width: "+(width-20)+"px; height: "+(height-20)+"px;'></div>";
-    var map;
-    var popup = L.popup();  // Used for Lat-Long display
+
+    // The following variables are used to maintain the map and paths 
+    var Map;
+    var Popup = L.popup();  // Used for Lat-Long display
+    // Feature group to store paths
+    // Feature groups have the advantage over layerGroups that it is possible to 
+    // extract the bounds of the group. Useful for  seting zoom level
+    var PathFG = new L.featureGroup(); 
 
     // create tiles for maps that can be switched to
-    var streetTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // If you add more tile options, include them in the Map Style HTML dropdown for selection
+    var StreetTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               });
-    var satelliteTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    var SatelliteTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-  });
+   });
 
-    //map = L.map('map',{ center: [43.64701, -79.39425], zoom: 15 });
-    //map = L.map('map',{scrollWheelZoom:false}).setView([45.6287,-122.5747], 16);
-    map = L.map('map').setView([45.6382,-122.5266], 16);
-    streetTile.addTo(map); 
-    L.control.scale().addTo(map); // Displays scale on map
+    //Map = L.map('map',{ center: [43.64701, -79.39425], zoom: 15 });
+    //Map = L.map('map',{scrollWheelZoom:false}).setView([45.6287,-122.5747], 16);
+    Map = L.map('map').setView([45.6382,-122.5266], 16);
+    StreetTile.addTo(Map); 
 
+    L.control.scale().addTo(Map); // Displays scale on map
 
-    // event handler for dropdown box
-    // select proper tile provider
+    // select map tile to be displayed, event handler for Map Style dropdown box
     function onSelect(){
        let result = document.getElementById("plotType").value;
-        if(result== "street" && map.hasLayer(satelliteTile)){
-            map.addLayer(streetTile);
-            map.removeLayer(satelliteTile);
+        if(result== "street" && Map.hasLayer(SatelliteTile)){
+            Map.addLayer(StreetTile);
+            Map.removeLayer(SatelliteTile);
         }
-        if(result== "satellite" && map.hasLayer(streetTile)){
-            map.addLayer(satelliteTile);
-            map.removeLayer(streetTile);
+        if(result== "satellite" && Map.hasLayer(StreetTile)){
+            Map.addLayer(SatelliteTile);
+            Map.removeLayer(StreetTile);
         }
     }
 
     // Go to GPS coordinate specified
-    function gotoGPS(){
+    function gotoGPS(zoomLevel){
         let lat=document.getElementById("latitude").value;
         let lng=document.getElementById("longitude").value;
-        //map.setView([lat,lng],16); // This jumps to new coordinate
-        map.flyTo([lat,lng],16);   // This does a cool fly transition to new coordinate
+        //Map.setView([lat,lng],16);     // This jumps to new coordinate
+        Map.flyTo([lat,lng],zoomLevel);         // This does a cool fly transition to new coordinate
     }
 
     // Display Lat-Lon when map is clicked
     function onMapClick(e) {
-        popup
+        Popup
         .setLatLng(e.latlng)
         .setContent(e.latlng.toString())
-        .openOn(map);
+        .openOn(Map);
     }
-    map.on('click', onMapClick);
+    Map.on('click', onMapClick);
 
-  function clearMap() {
-    for(i in map._layers) {
-        if(map._layers[i]._path != undefined) {
-            try {
-                map.removeLayer(map._layers[i]);
-            }
-            catch(e) {
-                console.log("problem with " + e + map._layers[i]);
-            }
-        }
+    // remove paths from map. Paths are stored in a feature group.
+    function clearPaths() {
+      // Loop all paths stored in feature group
+      PathFG.eachLayer(function(layer) { 
+      Map.removeLayer(layer);
+      });
+      PathFG.clearLayers(); // clear PathFG
     }
-  }
 
     /////////////////////////////////////////////////
     // Sample on how to draw different colored
@@ -134,16 +165,19 @@
       return(result);
     }
 
-    // draw paths to map 
+    // draw path to map 
     // coordinate data is in the format: mydata[[lat,long],[lat,long]...]
     // Each unique colorindex 0,1,2...  will be a different color
     function addPointsToMap(mydata,colorIndex){
-        // add line from array points to map with some basic styling
-        L.polyline(mydata,{color:getColor(colorIndex),opacity:1}).addTo(map);
+        // add line from array points to map
+        // add path to a feature group so they can be easily deleted and panned to
+        PathFG.addLayer(L.polyline(mydata,{color:getColor(colorIndex),opacity:1}).addTo(Map));
     }
-    // The following reads a file with paths. THe format is
-    // Path Name
-    // + <Latitude> <Longitude>
+
+
+    // The following reads a file with paths. The format is
+    // Path Name                 <--- Path name is not used other than to delimit path start/stop
+    // + <Latitude> <Longitude>  <--- Coordinate lines must start with '+'
     // + <Latitude> <Longitude>
     // + <Latitude> <Longitude>
     // Path 2 Name
@@ -157,49 +191,32 @@
       fr.onload=function(){
         var line='';
         var lines = this.result.split(/\r\n|\n/);
-        var outputArray=[];
         var coordArray=[];
-        var minLat=99999,maxLat=-99999,minLong=99999,maxLong=-99999;
-        clearMap();
+        var pathCount=0;
+        clearPaths();
         for(var index = 0; index < lines.length; index++){
           line=lines[index].replace(/\n/,""); // strip whitespace and linefeed
+          line=line.trim(); // remove leading/trailing white spaces
           if(line.charAt(0)=='+'){
             var result= line.split(" ");
-            coordArray.push([result[1],result[2]]);
-            result[1]=parseFloat(result[1]);
-            result[2]=parseFloat(result[2]);
-            if(result[1]<minLat){
-              minLat=result[1];
-            }
-            if(result[1]>maxLat){
-              maxLat=result[1];
-            }
-            if(result[2]<minLong){
-              minLong=result[2];
-            }
-            if(result[2]>maxLong){
-              maxLong=result[2];
-            }
+            coordArray.push([result[1],result[2]]); // result[0] is '+', so ignore it
           }else{ // found new path
-            if(coordArray.length>0){
-              outputArray.push(coordArray);
+            if(coordArray.length>0){// if path alreay exisis, display it before starting a new one
+              addPointsToMap(coordArray,pathCount);
+              ++pathCount;
             }
             coordArray=[];
           }
-          //console.log(index + " --> "+ lines[index]);
         }
-        if(coordArray.length>0){
-          outputArray.push(coordArray);
+        if(coordArray.length>0){ // Display last array if it exists
+          addPointsToMap(coordArray,pathCount);
         }
-        for(index =0;index<outputArray.length;++index){
-          addPointsToMap(outputArray[index],index);
-        }
-        map.setView([(maxLat+minLat)/2.0,(maxLong+minLong)/2.0],16);
+        Map.fitBounds(PathFG.getBounds()); // Zoom to new set of paths
       }
       if(this.files[0] instanceof Blob){
         fr.readAsText(this.files[0]);
       }
-  });
+    });
 
 </script>
 
