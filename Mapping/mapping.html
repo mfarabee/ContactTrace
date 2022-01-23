@@ -64,7 +64,7 @@
 
     //map = L.map('map',{ center: [43.64701, -79.39425], zoom: 15 });
     //map = L.map('map',{scrollWheelZoom:false}).setView([45.6287,-122.5747], 16);
-    map = L.map('map').setView([45.6287,-122.5747], 16);
+    map = L.map('map').setView([45.6382,-122.5266], 16);
     streetTile.addTo(map); 
     L.control.scale().addTo(map); // Displays scale on map
 
@@ -100,6 +100,18 @@
     }
     map.on('click', onMapClick);
 
+  function clearMap() {
+    for(i in map._layers) {
+        if(map._layers[i]._path != undefined) {
+            try {
+                map.removeLayer(map._layers[i]);
+            }
+            catch(e) {
+                console.log("problem with " + e + map._layers[i]);
+            }
+        }
+    }
+  }
 
     /////////////////////////////////////////////////
     // Sample on how to draw different colored
@@ -129,7 +141,6 @@
         // add line from array points to map with some basic styling
         L.polyline(mydata,{color:getColor(colorIndex),opacity:1}).addTo(map);
     }
-
     // The following reads a file with paths. THe format is
     // Path Name
     // + <Latitude> <Longitude>
@@ -149,6 +160,7 @@
         var outputArray=[];
         var coordArray=[];
         var minLat=99999,maxLat=-99999,minLong=99999,maxLong=-99999;
+        clearMap();
         for(var index = 0; index < lines.length; index++){
           line=lines[index].replace(/\n/,""); // strip whitespace and linefeed
           if(line.charAt(0)=='+'){
