@@ -11,12 +11,12 @@
       * Loads the necessary Leaflet modules
       * create a map <div> to be used by Leaflet modules
       * Creates some options to exercise functionality
-        - change map style
         - Go to GPS coordinate
         - Load paths from loacal file to be plotted
 
     The JavaScript provides the following functions:
         * Initializes differnt tiles
+        * Add Control to switch between tiles (baselayers)
         * Creates a popup with Lat and Long values when map is clicked
         * Displays a scale on the map
         * Demonstrate how to move to GPS coordinates 
@@ -54,11 +54,6 @@
 
 <body>
 
-  Map Style: &nbsp;
-  <select title="Map Style" name="plotType" id="plotType" onchange="onSelect()" enabled>
-    <option value="street">Street</option>
-    <option value="satellite">Satellite</option>
-  </select>
   Latitude:<input type="number" id="latitude" name="latitude" title="latitude">
   Longitude:<input type="number" id="longitude" name="longitude" title="longitude">
   <button id="findGPS" onclick="gotoGPS(16)" title="submit">Submit</button>
@@ -90,31 +85,50 @@
     var PathFG = new L.featureGroup(); 
 
     // create tiles for maps that can be switched to
-    // If you add more tile options, include them in the Map Style HTML dropdown for selection
+    // If you add more tile options, include them in the Baselayers array for selection
     var StreetTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               });
     var SatelliteTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
    });
+   var TopoTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+});
+
+  var Baselayers={
+     "Street": StreetTile,
+     "Satellite": SatelliteTile,
+     "Topology": TopoTile
+  };
 
     //Map = L.map('map',{ center: [43.64701, -79.39425], zoom: 15 });
     //Map = L.map('map',{scrollWheelZoom:false}).setView([45.6287,-122.5747], 16);
     Map = L.map('map').setView([45.6382,-122.5266], 16);
-    StreetTile.addTo(Map); 
+
+    var Overlays={};
+    L.control.layers(Baselayers,Overlays).addTo(Map);
+    Baselayers["Street"].addTo(Map); // initalize map with Street view
 
     L.control.scale().addTo(Map); // Displays scale on map
 
     // select map tile to be displayed, event handler for Map Style dropdown box
     function onSelect(){
        let result = document.getElementById("plotType").value;
-        if(result== "street" && Map.hasLayer(SatelliteTile)){
+        if(result== "street" && !Map.hasLayer(StreetTile)){
             Map.addLayer(StreetTile);
+            Map.removeLayer(TopoTile);
             Map.removeLayer(SatelliteTile);
         }
-        if(result== "satellite" && Map.hasLayer(StreetTile)){
+        if(result== "satellite" && !Map.hasLayer(SatelliteTile)){
             Map.addLayer(SatelliteTile);
+            Map.removeLayer(TopoTile);
             Map.removeLayer(StreetTile);
+        }
+        if(result== "topo" && !Map.hasLayer(TopoTile)){
+            Map.addLayer(TopoTile);
+            Map.removeLayer(StreetTile);
+            Map.removeLayer(SatelliteTile);
         }
     }
 
